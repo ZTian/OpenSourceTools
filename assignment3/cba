@@ -1,0 +1,49 @@
+#!/bin/sh
+
+file=${1:-/dev/stdin}
+
+#unzip file
+rm -rf /tmp/hw
+gunzip -c $file > hold
+
+#pax
+pax -r < hold
+rm -rf hold
+
+delimiter=$(cat /tmp/hw/d)
+
+#paste file together
+col=$( ls /tmp/hw | sort -n -r | head -1 )
+
+files="/tmp/hw/1"
+
+for index in $(seq 2 $col )
+do
+  files="${files} /tmp/hw/$index"
+done
+
+if [ $col -eq 1 ]
+then
+  paste $files > /tmp/hw/output
+else
+  paste -d $delimiter $files > /tmp/hw/output
+fi
+
+if [ $file = "/dev/stdin" ]
+then
+  cat /tmp/hw/output
+else
+  if [ $file = *.abc ]
+  then
+    filename=$(echo $file | sed 's/\(.*\)\.abc/\1/')
+    if [ -f $filename ]
+    then
+      cat /tmp/hw/output > "${file}.cba"
+    else
+     cat /tmp/hw/output > "$filename"
+    fi
+  fi
+fi
+
+trap "rm -rf /tmp/hw" EXIT
+

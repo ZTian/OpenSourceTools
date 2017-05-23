@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#$1 is the delimiter.
+del=$1
+file=${2:-/dev/stdin}
+
+#find the minimum number of columns
+min=$(awk -F $del 'BEGIN{min=9999999}
+{
+  if(min>NF) {min=NF}
+}
+END{ print min}' $file)
+
+#clean up the directory
+rm -rf /tmp/hw
+mkdir /tmp/hw
+
+#partition columns into different files
+for col in $(seq $min )
+do
+  cut -d $del -f $col $file > "/tmp/hw/$col"  	
+done
+last=$((min + 1 ))
+cut -d $del -f ${last}- $file > "/tmp/hw/last"
+
+#store a file of delimiter
+echo $del > /tmp/hw/d
+
+#encode files to a single file
+pax -w /tmp/hw/* > /tmp/hw/group
+
+#run gzip
+if [ $file = "/dev/stdin" ]
+then
+  gzip -f < /tmp/hw/group
+else
+  gzip < /tmp/hw/group > "${file}.abc"
+fi
+
+trap "rm -rf /tmp/hw" EXIT
+
+
+
+

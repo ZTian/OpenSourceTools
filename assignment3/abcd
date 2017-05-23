@@ -1,0 +1,49 @@
+#!/bin/sh
+
+#store all the delimiters
+delimiter=(',' '|' ':' ';' '#')
+
+#store all the information from gzip
+#count array holds the value of lines, words and bytes
+hold=$(gzip -c<$1 | wc )
+count[0]=$(echo $hold | cut -d' ' -f 1 )
+count[1]=$(echo $hold | cut -d' ' -f 2 )
+count[2]=$(echo $hold | cut -d' ' -f 3 )
+minType=5
+
+for index in $(seq 0 4) 
+do
+  del=${delimiter[index]}
+  hold=$(abc "$del"<$1 | wc )
+  result[0]=$(echo $hold | cut -d' ' -f 1 )
+  result[1]=$(echo $hold | cut -d' ' -f 2 )
+  result[2]=$(echo $hold | cut -d' ' -f 3 ) 
+  if [ ${result[2]} -lt ${count[2]} ]
+  then
+    count=("${result[@]}")
+    minType=$index
+  else
+    if [ ${result[2]} -eq ${count[2]} ] && [ ${result[1]} -lt ${count[1]} ]
+    then
+      count=("${result[@]}")
+      minType=$index
+    else
+      if [ ${result[2]} -eq ${count[2]} ] && [ ${result[1]} -eq ${count[1]} ] && [ ${result[0]} -lt ${count[0]} ]
+      then
+        count=("${result[@]}")
+        minType=$index
+      fi
+    fi
+  fi
+done
+
+if [ $minType -eq 5 ]
+then
+  echo "gzip $1"
+else
+  echo "abc '${delimiter[minType]}' $1"
+fi
+
+
+
+
